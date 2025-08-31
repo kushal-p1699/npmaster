@@ -24,8 +24,8 @@
     "views": {
       "npmaster": [
         {
-          "id": "npmaster.view",
-          "name": "NPMaster"
+          "id": "npmaster.installedPackages",
+          "name": "Installed Packages"
         }
       ]
     },
@@ -33,12 +33,12 @@
       {
         "view": "npmaster.view",
         "contents": "Detecting Node project...",
-        "when": "npmaster.state === loading"
+        "when": "npmaster.hasNodeProject === undefined"
       },
       {
         "view": "npmaster.view",
         "contents": "Welcome to NPMaster!\n[Open a Node Project](command:npmaster.openProject)\nOnce you open a project with a package.json, installed packages will be listed here.",
-        "when": "npmaster.state === notDetected"
+        "when": "npmaster.hasNodeProject === false"
       }
     ],
     "commands": [

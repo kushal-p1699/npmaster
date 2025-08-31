@@ -1,25 +1,38 @@
 import * as vscode from "vscode";
 import * as path from "path";
 import * as fs from "fs";
+import { getNodeDependencies } from "./packageService";
+import { PackageTreeProvider } from "./packageTree";
 
 /**
  * This method is called when your extension is activated
  *
  * @param context - The extension context
  */
-export function activate(context: vscode.ExtensionContext) {
-  const updateContext = () => {
-    vscode.commands.executeCommand("setContext", "npmaster.state", "loading");
+export async function activate(context: vscode.ExtensionContext) {
+  const treeProvider = new PackageTreeProvider();
+  vscode.window.registerTreeDataProvider(
+    "npmaster.installedPackages",
+    treeProvider
+  );
+
+  const updateContext = async () => {
+    vscode.commands.executeCommand(
+      "setContext",
+      "npmaster.hasNodeProject",
+      undefined
+    );
 
     const folders = vscode.workspace.workspaceFolders;
     let hasNodeProject = false;
+    let deps = null;
 
     if (folders && folders.length > 0) {
       for (const folder of folders) {
         const packageJsonPath = path.join(folder.uri.fsPath, "package.json");
-        // Simulate async detection (replace with fs.promises if you want real async)
         if (fs.existsSync(packageJsonPath)) {
           hasNodeProject = true;
+          deps = await getNodeDependencies(folder.uri.fsPath);
           break;
         }
       }
@@ -28,16 +41,17 @@ export function activate(context: vscode.ExtensionContext) {
     setTimeout(() => {
       vscode.commands.executeCommand(
         "setContext",
-        "npmaster.state",
-        hasNodeProject ? "detected" : "notDetected"
+        "npmaster.hasNodeProject",
+        hasNodeProject
       );
+      if (deps) {
+        treeProvider.setDeps(deps);
+      }
     }, 500);
   };
 
-  // run once on activation
   updateContext();
 
-  // Update if workspace changes
   context.subscriptions.push(
     vscode.workspace.onDidChangeWorkspaceFolders(updateContext)
   );
